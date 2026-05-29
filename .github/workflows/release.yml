@@ -5,38 +5,58 @@ on: [workflow_dispatch]
 jobs:
   release_build:
     runs-on: ubuntu-latest
+    
+    # Allows the workflow to create a Release tab and upload files
+    permissions:
+      contents: write
+
     container:
-      # adoptopenjdk is no longer maintained
       image: eclipse-temurin:17-jdk
       options: --user root
+
     steps:
-      - run: apt-get update && apt-get install git -y && git --version # Ensure Git is installed for the changelog script.
-      - uses: actions/checkout@v4
+      - name: Install System Git
+        run: apt-get update && apt-get install git -y && git --version
+
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: actions/checkout marks the directory as safe, but its not picked up by fabric-action-scripts.
-        run: git config --global --add safe.directory /__w/BlockProt/BlockProt
-      - uses: FabricMC/fabric-action-scripts@v2
+
+      # FIXED: This dynamic path adapts perfectly to your custom fork directory layout
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+
+      - name: Generate Changelog Entries
+        uses: FabricMC/fabric-action-scripts@v2
         id: changelog
         with:
           context: changelog
           workflow_id: release.yml
-          # We want to exclude these commits in the changelog.
           commit_regex: (Bump|Codechange|[a-zA-Z].* \[GH\]:|Build\(deps\))(.*)
-      - name: Set up JDK 17
+
+      # FIXED: Changed out-of-date 'adopt' distribution target over to 'temurin'
+      - name: Initialize JDK 17 Environment
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'adopt'
-      - uses: gradle/wrapper-validation-action@v2
-      - run: ./gradlew build github --stacktrace
+          distribution: 'temurin'
+
+      - name: Validate Gradle Infrastructure
+        uses: gradle/wrapper-validation-action@v2
+
+      - name: Execute Project Build Script
+        run: ./gradlew build github --stacktrace
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
-      - uses: actions/upload-artifact@v4
+
+      # FIXED: Widened the selection filter to ensure your blockprot-spigot-all.jar is compiled and caught
+      - name: Archive Local Artifact Output
+        uses: actions/upload-artifact@v4
         with:
           name: Artifacts
           path: |
-            **/build/libs/[a-z0-9]-all.jar
+            **/build/libs/*.jar
             !common/**
