@@ -28,7 +28,7 @@ and place it in your `plugins` directory. You do not have to install anything el
 version will work with any recent Minecraft version, as long as you're running Java 17 or higher.
 It runs on any Spigot and any fork thereof and does **not** run on CraftBukkit.
 
-To get the latest updates the quickest, you can "watch" or "star" this repository or frequently
+To get the latest updates the quickest, you can "watch" or "star" this repository or frequentl
 check the [Release tab](https://github.com/spnda/BlockProt/releases). Alternatively, it is also
 possible to [watch the resource](https://www.spigotmc.org/resources/blockprot.87829/watch) on
 Spigot, which will also notify you as soon as new builds get released.
